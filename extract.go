@@ -15,7 +15,7 @@ func ExtractBoxWithPayload(r io.ReadSeeker, parent *BoxInfo, path BoxPath) ([]*B
 }
 
 func ExtractBoxesWithPayload(r io.ReadSeeker, parent *BoxInfo, paths []BoxPath) ([]*BoxInfoWithPayload, error) {
-	bis, err := ExtractBoxes(r, parent, paths)
+	bis, _, err := ExtractBoxes(r, parent, paths)
 	if err != nil {
 		return nil, err
 	}
@@ -42,18 +42,18 @@ func ExtractBoxesWithPayload(r io.ReadSeeker, parent *BoxInfo, paths []BoxPath) 
 	return bs, nil
 }
 
-func ExtractBox(r io.ReadSeeker, parent *BoxInfo, path BoxPath) ([]*BoxInfo, error) {
+func ExtractBox(r io.ReadSeeker, parent *BoxInfo, path BoxPath) ([]*BoxInfo, ReadHandler, error) {
 	return ExtractBoxes(r, parent, []BoxPath{path})
 }
 
-func ExtractBoxes(r io.ReadSeeker, parent *BoxInfo, paths []BoxPath) ([]*BoxInfo, error) {
+func ExtractBoxes(r io.ReadSeeker, parent *BoxInfo, paths []BoxPath) ([]*BoxInfo, ReadHandler, error) {
 	if len(paths) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	for i := range paths {
 		if len(paths[i]) == 0 {
-			return nil, errors.New("box path must not be empty")
+			return nil, nil, errors.New("box path must not be empty")
 		}
 	}
 
@@ -82,10 +82,10 @@ func ExtractBoxes(r io.ReadSeeker, parent *BoxInfo, paths []BoxPath) ([]*BoxInfo
 
 	if parent != nil {
 		_, err := ReadBoxStructureFromInternal(r, parent, handler)
-		return boxes, err
+		return boxes, handler, err
 	}
 	_, err := ReadBoxStructure(r, handler)
-	return boxes, err
+	return boxes, handler, err
 }
 
 func matchPath(paths []BoxPath, path BoxPath) (forwardMatch bool, match bool) {
